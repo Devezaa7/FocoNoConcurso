@@ -1,0 +1,7 @@
+{
+  "materias": [
+    { "id": 1, "nome": "Direito Constitucional", "ultimaRevisao": "2026-03-29" },
+    { "id": 2, "nome": "Matemática", "ultimaRevisao": "2026-04-01" },
+    { "id": 3, "nome": "Língua Portuguesa", "ultimaRevisao": "2026-03-26" }
+  ]
+}
