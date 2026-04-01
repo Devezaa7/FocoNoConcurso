@@ -320,7 +320,7 @@ foco-no-concurso/
 
 <div align="center">
 
-**Feito com 💙 por [Seu Nome]**
+**Feito por Guilhermy Deveza**
 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Conectar-0077B5?style=for-the-badge&logo=linkedin)](https://linkedin.com/in/seu-usuario)
 [![GitHub](https://img.shields.io/badge/GitHub-Seguir-181717?style=for-the-badge&logo=github)](https://github.com/seu-usuario)
