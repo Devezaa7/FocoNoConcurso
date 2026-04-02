@@ -19,7 +19,7 @@ export function PlanoEstudosModal({ onFechar }: Props) {
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
-  const chaveAPI = process.env.REACT_APP_GEMINI_KEY;
+  const chaveAPI = process.env.REACT_APP_OPENROUTER_KEY;
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -30,7 +30,7 @@ export function PlanoEstudosModal({ onFechar }: Props) {
   async function gerarPlano() {
     if (!chaveAPI || chaveAPI.trim() === "") {
       setErro(
-        "Chave da API não encontrada. Crie o arquivo .env na raiz do projeto com: REACT_APP_GEMINI_KEY=AIza... e reinicie o servidor."
+        "Chave da API não encontrada. Crie o arquivo .env na raiz do projeto com: REACT_APP_OPENROUTER_KEY=sk-or-... e reinicie o servidor."
       );
       return;
     }
@@ -47,19 +47,20 @@ export function PlanoEstudosModal({ onFechar }: Props) {
     setPlano("");
 
     try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${chaveAPI}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            contents: [
-              {
-                parts: [
-                  {
-                    text: `Você é especialista em concursos públicos brasileiros. Crie um plano de estudos detalhado com as informações abaixo:
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${chaveAPI}`,
+          "HTTP-Referer": "http://localhost:3000",
+          "X-Title": "Foco no Concurso",
+        },
+        body: JSON.stringify({
+          model: "meta-llama/llama-3.3-8b-instruct:free",
+          messages: [
+            {
+              role: "user",
+              content: `Você é especialista em concursos públicos brasileiros. Crie um plano de estudos detalhado com as informações abaixo:
 
 - Horas disponíveis por dia: ${horasPorDia}h
 - Dias de estudo por semana: ${diasDisponiveis}
@@ -73,13 +74,10 @@ Monte o plano com os seguintes tópicos:
 # Dicas Práticas
 
 Seja objetivo e prático. Use listas quando possível.`,
-                  },
-                ],
-              },
-            ],
-          }),
-        }
-      );
+            },
+          ],
+        }),
+      });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -90,9 +88,7 @@ Seja objetivo e prático. Use listas quando possível.`,
       }
 
       const data = await response.json();
-
-      const textoResposta =
-        data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      const textoResposta = data?.choices?.[0]?.message?.content || "";
 
       if (!textoResposta) {
         throw new Error("A IA retornou uma resposta vazia. Tente novamente.");
@@ -169,7 +165,8 @@ Seja objetivo e prático. Use listas quando possível.`,
               <p>
                 <strong>Chave da API não configurada.</strong> Crie o arquivo{" "}
                 <code>.env</code> na raiz do projeto com:{" "}
-                <code>REACT_APP_GEMINI_KEY=AIza...</code> e reinicie o servidor.
+                <code>REACT_APP_OPENROUTER_KEY=sk-or-...</code> e reinicie o
+                servidor.
               </p>
             </div>
           )}
