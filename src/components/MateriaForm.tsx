@@ -46,7 +46,7 @@ export function MateriaForm({ onCriar }: Props) {
           "anthropic-dangerous-direct-browser-access": "true",
         },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
+          model: "claude-sonnet-4-6",
           max_tokens: 300,
           messages: [{ role: "user", content: `Liste os 5 topicos mais cobrados em concursos publicos brasileiros para "${materia}". Responda APENAS com os topicos, um por linha, comecando com "•". Sem introducao.` }],
         }),
