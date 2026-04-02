@@ -56,7 +56,7 @@ export function PlanoEstudosModal({ onFechar }: Props) {
           "X-Title": "Foco no Concurso",
         },
         body: JSON.stringify({
-          model: "mistralai/mistral-7b-instruct:free",
+          model: "openrouter/auto",
           messages: [
             {
               role: "user",
