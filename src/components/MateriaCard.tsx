@@ -1,4 +1,5 @@
 import { getStatus } from "../hooks/useMaterias";
+import { diasDesde, formatarData } from "../utils/dateUtils";
 import { Materia } from "../types";
 
 interface Props {
@@ -14,15 +15,10 @@ const STATUS_CONFIG = {
   atrasada:  { label: "Revisar ja! 🔴", className: "status-atrasada" },
 };
 
-function formatarData(dataISO: string): string {
-  const [ano, mes, dia] = dataISO.split("-");
-  return `${dia}/${mes}/${ano}`;
-}
-
-function diasDesde(ultimaRevisao: string): number {
-  const hoje = new Date();
-  const revisao = new Date(ultimaRevisao + "T00:00:00");
-  return Math.floor((hoje.getTime() - revisao.getTime()) / (1000 * 60 * 60 * 24));
+function descricaoDias(dias: number): string {
+  if (dias === 0) return "Revisado hoje";
+  if (dias === 1) return "Ha 1 dia";
+  return `Ha ${dias} dias`;
 }
 
 export function MateriaCard({ materia, carregando, onRevisar, onDeletar }: Props) {
@@ -39,7 +35,7 @@ export function MateriaCard({ materia, carregando, onRevisar, onDeletar }: Props
       <p className="card-info">
         Ultima revisao: <strong>{formatarData(materia.ultimaRevisao)}</strong>
         {" · "}
-        {dias === 0 ? "Revisado hoje" : dias === 1 ? "Ha 1 dia" : `Ha ${dias} dias`}
+        {descricaoDias(dias)}
       </p>
       <div className="card-actions">
         <button onClick={() => onRevisar(materia.id)} disabled={carregando} className="btn-revisar">

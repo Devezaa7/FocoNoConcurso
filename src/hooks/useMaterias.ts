@@ -1,15 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "../services/api";
+import { diasDesde } from "../utils/dateUtils";
 import { Materia, StatusRevisao } from "../types";
 
-function getDias(ultimaRevisao: string): number {
-  const hoje = new Date();
-  const revisao = new Date(ultimaRevisao + "T00:00:00");
-  return Math.floor((hoje.getTime() - revisao.getTime()) / (1000 * 60 * 60 * 24));
-}
-
+/**
+ * Retorna o status de revisão com base nos dias desde a última revisão.
+ * Regra de revisão espaçada:
+ *  - até 2 dias → em dia
+ *  - até 5 dias → atenção
+ *  - mais de 5 dias → atrasada
+ */
 export function getStatus(ultimaRevisao: string): StatusRevisao {
-  const dias = getDias(ultimaRevisao);
+  const dias = diasDesde(ultimaRevisao);
   if (dias <= 2) return "em-dia";
   if (dias <= 5) return "atencao";
   return "atrasada";
@@ -23,7 +25,8 @@ export function useMaterias() {
 
   const fetchMaterias = useCallback(async () => {
     try {
-      setLoading(true); setErro(null);
+      setLoading(true);
+      setErro(null);
       setMaterias(await api.getMaterias());
     } catch {
       setErro("Nao foi possivel carregar as materias. Verifique se o servidor esta rodando.");
@@ -32,7 +35,9 @@ export function useMaterias() {
     }
   }, []);
 
-  useEffect(() => { fetchMaterias(); }, [fetchMaterias]);
+  useEffect(() => {
+    fetchMaterias();
+  }, [fetchMaterias]);
 
   const criarMateria = useCallback(async (nome: string) => {
     const hoje = new Date().toISOString().split("T")[0];
@@ -46,7 +51,11 @@ export function useMaterias() {
       const atualizada = await api.revisarMateria(id);
       setMaterias((prev) => prev.map((m) => (m.id === id ? atualizada : m)));
     } finally {
-      setLoadingIds((prev) => { const n = new Set(prev); n.delete(id); return n; });
+      setLoadingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
     }
   }, []);
 
@@ -56,7 +65,11 @@ export function useMaterias() {
       await api.deleteMateria(id);
       setMaterias((prev) => prev.filter((m) => m.id !== id));
     } finally {
-      setLoadingIds((prev) => { const n = new Set(prev); n.delete(id); return n; });
+      setLoadingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
     }
   }, []);
 
