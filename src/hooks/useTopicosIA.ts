@@ -1,27 +1,29 @@
-import { useState } from "react";
+// ✅ RPI — Responsabilidade única: isolamento da integração com IA
+// Melhorias: useCallback nas funções, erro tipado, model atualizado
 
-interface UseTopicosIAResult {
+import { useCallback, useState } from "react";
+
+const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
+
+interface TopicosState {
   topicos: string | null;
   carregando: boolean;
-  buscarTopicos: (materia: string) => Promise<void>;
-  limpar: () => void;
+  erro: string | null; // ✅ NOVO — erro separado do conteúdo
 }
 
-/**
- * Responsável por buscar os tópicos mais cobrados de uma matéria
- * via API da Anthropic. Isola toda a lógica de integração com IA
- * fora do componente de formulário.
- */
-export function useTopicosIA(): UseTopicosIAResult {
-  const [topicos, setTopicos] = useState<string | null>(null);
-  const [carregando, setCarregando] = useState(false);
+export function useTopicosIA() {
+  const [state, setState] = useState<TopicosState>({
+    topicos: null,
+    carregando: false,
+    erro: null,
+  });
 
-  async function buscarTopicos(materia: string) {
-    setCarregando(true);
-    setTopicos(null);
+  // ✅ useCallback — não recria a função a cada render
+  const buscarTopicos = useCallback(async (materia: string) => {
+    setState({ topicos: null, carregando: true, erro: null });
 
     try {
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
+      const response = await fetch(ANTHROPIC_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -30,7 +32,7 @@ export function useTopicosIA(): UseTopicosIAResult {
           "anthropic-dangerous-direct-browser-access": "true",
         },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
+          model: "claude-sonnet-4-6", // ✅ model atualizado
           max_tokens: 300,
           messages: [
             {
@@ -41,23 +43,24 @@ export function useTopicosIA(): UseTopicosIAResult {
         }),
       });
 
+      if (!response.ok) throw new Error(`Erro HTTP ${response.status}`);
+
       const data = await response.json();
-      const texto = data.content
+      const texto: string = data.content
         .filter((b: { type: string }) => b.type === "text")
         .map((b: { text: string }) => b.text)
         .join("");
 
-      setTopicos(texto);
-    } catch {
-      setTopicos("Não foi possível carregar os tópicos agora.");
-    } finally {
-      setCarregando(false);
+      setState({ topicos: texto, carregando: false, erro: null });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Erro desconhecido";
+      setState({ topicos: null, carregando: false, erro: msg });
     }
-  }
+  }, []);
 
-  function limpar() {
-    setTopicos(null);
-  }
+  const limpar = useCallback(() => {
+    setState({ topicos: null, carregando: false, erro: null });
+  }, []);
 
-  return { topicos, carregando, buscarTopicos, limpar };
+  return { ...state, buscarTopicos, limpar };
 }

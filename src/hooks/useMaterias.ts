@@ -1,21 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "../services/api";
-import { diasDesde } from "../utils/dateUtils";
-import { Materia, StatusRevisao } from "../types";
-
-/**
- * Retorna o status de revisão com base nos dias desde a última revisão.
- * Regra de revisão espaçada:
- *  - até 2 dias → em dia
- *  - até 5 dias → atenção
- *  - mais de 5 dias → atrasada
- */
-export function getStatus(ultimaRevisao: string): StatusRevisao {
-  const dias = diasDesde(ultimaRevisao);
-  if (dias <= 2) return "em-dia";
-  if (dias <= 5) return "atencao";
-  return "atrasada";
-}
+import { Materia } from "../types";
+import { getStatus } from "../utils/statusRevisao";
 
 export function useMaterias() {
   const [materias, setMaterias] = useState<Materia[]>([]);
@@ -29,7 +15,7 @@ export function useMaterias() {
       setErro(null);
       setMaterias(await api.getMaterias());
     } catch {
-      setErro("Nao foi possivel carregar as materias. Verifique se o servidor esta rodando.");
+      setErro("Não foi possível carregar as matérias. Verifique se o servidor está rodando.");
     } finally {
       setLoading(false);
     }
@@ -39,6 +25,17 @@ export function useMaterias() {
     fetchMaterias();
   }, [fetchMaterias]);
 
+ 
+  const addLoadingId = (id: number) =>
+    setLoadingIds((prev) => new Set(prev).add(id));
+
+  const removeLoadingId = (id: number) =>
+    setLoadingIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+
   const criarMateria = useCallback(async (nome: string) => {
     const hoje = new Date().toISOString().split("T")[0];
     const nova = await api.createMateria({ nome, ultimaRevisao: hoje });
@@ -46,30 +43,22 @@ export function useMaterias() {
   }, []);
 
   const revisarMateria = useCallback(async (id: number) => {
-    setLoadingIds((prev) => new Set(prev).add(id));
+    addLoadingId(id);
     try {
       const atualizada = await api.revisarMateria(id);
       setMaterias((prev) => prev.map((m) => (m.id === id ? atualizada : m)));
     } finally {
-      setLoadingIds((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
+      removeLoadingId(id);
     }
   }, []);
 
   const deletarMateria = useCallback(async (id: number) => {
-    setLoadingIds((prev) => new Set(prev).add(id));
+    addLoadingId(id);
     try {
       await api.deleteMateria(id);
       setMaterias((prev) => prev.filter((m) => m.id !== id));
     } finally {
-      setLoadingIds((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
+      removeLoadingId(id);
     }
   }, []);
 
@@ -79,5 +68,15 @@ export function useMaterias() {
     emDia: materias.filter((m) => getStatus(m.ultimaRevisao) === "em-dia").length,
   }), [materias]);
 
-  return { materias, loading, erro, loadingIds, estatisticas, criarMateria, revisarMateria, deletarMateria };
+  return {
+    materias,
+    loading,
+    erro,
+    loadingIds,
+    estatisticas,
+    criarMateria,
+    revisarMateria,
+    deletarMateria,
+    recarregar: fetchMaterias,
+  };
 }

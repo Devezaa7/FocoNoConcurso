@@ -1,4 +1,4 @@
-import { getStatus } from "../hooks/useMaterias";
+import { getStatus } from "../utils/statusRevisao";
 import { diasDesde, formatarData } from "../utils/dateUtils";
 import { Materia } from "../types";
 
